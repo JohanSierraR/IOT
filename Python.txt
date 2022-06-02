@@ -1,0 +1,47 @@
+import os
+"""print("temperatura")
+print(os.system("mosquitto_sub -h localhost -t casa/temperatura"))
+print("humedad")
+print(os.system("mosquitto_sub -h localhost -t casa/humedad"))
+"""
+
+#import pandas as pd
+
+try:
+    import paho.mqtt.client as mqtt
+except:
+    os.system("pip3 install paho-mqtt")
+    import paho.mqtt.client as mqtt
+
+try:
+    import pandas as pd
+except:
+    os.system("pip3 install pandas")
+    import pandas as pd
+
+data = []
+df = pd.DataFrame(columns=["temperatura", "humedad"])
+temperatura = []
+humedad = []
+
+def on_connect(client, userdata, flags, rc):
+    print("Connected to broker")
+
+def on_message(client, userdata, msg):
+    data = msg.payload.decode()
+    if "temperatura" in msg.topic:
+        temperatura.append(data)
+    elif "humedad" in msg.topic:
+        humedad.append(data)
+    
+    if len(humedad) == len(temperatura):
+        auxiliar_df = pd.DataFrame({"temperatura": temperatura, "humedad": humedad})
+        auxiliar_df.to_csv("datos.csv")
+
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
+client.connect("192.168.186.15", 1883, 60)
+client.subscribe("casa/temperatura")
+client.subscribe("casa/humedad")
+client.loop_forever()
